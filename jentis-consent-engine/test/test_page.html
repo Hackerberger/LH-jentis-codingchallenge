@@ -45,54 +45,42 @@
 		<script src="./test_conf.js"></script>
 		<script src="../JentisConsentEngine.js" /></script>
 		<script src="./JCE_bridge_GTM.js" /></script>
-		
-		<script>
-		
-		
-		// function acceptAll()
-		// {
-		// 	jentis.consent.engine.AcceptAll();
-		// }
-		
-		// function acceptGa()
-		// {		
-		// 	var sConsentId = jentis.consent.engine.setNewVendorConsents({
-		// 	  "ga"  : true, 
-		// 	  "fb"  : true
-		// 	});		
-		// }
-		
-		// function denyAll()
-		// {		
-		// 	var sConsentId = jentis.consent.engine.DenyAll();
-		// }
-		
-		// function MigrateOldConsent()
-		// {
-		// 	var aData = {
-		// 		consentid: "TESTTESTTEST",
-		// 		lastupdate: 100,
-		// 		vendors: {"ga":true,"fb":false,"adw":false}				
-		// 	};			
-		// 	var sJson = JSON.stringify(aData);
 
-		// 	//Now write it to the local storage
-		// 	localStorage.setItem("jentis.consent.data", sJson);		
-		// }
-		
-		// function MigrateInTimeConsent()
-		// {
-		// 	var aData = {
-		// 		consentid: "TESTTESTTEST",
-		// 		lastupdate: Date.now()-1000,
-		// 		vendors: {"ga":true,"fb":false,"adw":false}				
-		// 	};			
-		// 	var sJson = JSON.stringify(aData);
+		<script type="text/javascript">
+			const vendorData = jentis.consent.engine.getVendorFullData("en", true);
+			const consent = Cookiebot.consent;
 
-		// 	//Now write it to the local storage
-		// 	localStorage.setItem("jentis.consent.data", sJson);		
-		// }
-		
+			//Fired when some or all cookies are accepted
+			window.addEventListener('CookiebotOnAccept', function (e) {
+				let consentedCookies = {};
+
+				//Check if all cookies were accepted
+				if (consent.marketing && consent.statistics && consent.preferences)
+					{
+						jentis.consent.engine.AcceptAll();
+					}
+				//Else check which cookies were accepted
+				else
+					{
+						for(key in vendorData){
+							if (vendorData[key].purpose.id == "mark")
+								consentedCookies[key] = consent.marketing;
+							else if (vendorData[key].purpose.id == "stat")
+								consentedCookies[key] = consent.statistics;
+							//Not necessary but for possible future usecases
+							else if (vendorData[key].purpose.id == "pref")
+								consentedCookies[key] = consent.preferences;
+						}
+
+						jentis.consent.engine.setNewVendorConsents(consentedCookies);	
+					}
+			}, false);
+
+			//Fired when only necessary cookies are accepted
+			window.addEventListener('CookiebotOnDecline', function (e) {
+				jentis.consent.engine.DenyAll();
+				console.log("ALL DENIED");
+			}, false);
 		</script>
 
 		<style>
@@ -109,63 +97,7 @@
 		<button onClick=" Cookiebot.renew();">
 			Renew or change your cookie settings
 		</button>
-		<!-- <button onClick="acceptAll();">
-			Accept All
-		</button>
-		<button onClick="acceptGa();">
-			Accept GA
-		</button>
-		<button onClick="denyAll();">
-			DENY All
-		</button>
-		<button onClick="MigrateOldConsent();">
-			Do old consent OUT OF TIME
-		</button>
-		<button onClick="MigrateInTimeConsent();">
-			Do old consent IN TIME
-		</button> -->
+
 		
-
-
-
-
-
-		<script type="text/javascript">
-		const vendorData = jentis.consent.engine.getVendorFullData("en", true);
-		const consent = Cookiebot.consent;
-
-		//Fired when some or all cookies are accepted
-		window.addEventListener('CookiebotOnAccept', function (e) {
-		let consentedCookies = {};
-
-		//Check if all cookies were accepted
-		if (consent.marketing && consent.statistics && consent.preferences)
-			{
-				jentis.consent.engine.AcceptAll();
-			}
-		//Else check which cookies were accepted
-		else
-			{
-				for(key in vendorData){
-					if (vendorData[key].purpose.id == "mark")
-						consentedCookies[key] = consent.marketing;
-					else if (vendorData[key].purpose.id == "stat")
-						consentedCookies[key] = consent.statistics;
-					//Not necessary but for possible future usecases
-					else if (vendorData[key].purpose.id == "pref")
-						consentedCookies[key] = consent.preferences;
-				}
-
-				jentis.consent.engine.setNewVendorConsents(consentedCookies);	
-			}
-		}, false);
-
-		//Fired when only necessary cookies are accepted
-		window.addEventListener('CookiebotOnDecline', function (e) {
-			jentis.consent.engine.DenyAll();
-			console.log("ALL DENIED");
-		}, false);
-
-		</script>
 	</body>
 </html>
