@@ -8,7 +8,7 @@
 		<script>
 			document.addEventListener('jentis.consent.engine.minimal-consent-given', function (e)
 			{
-				console.log("Miniaml Consent is given: %o",e.detail);
+				console.log("Minimal Consent is given: %o",e.detail);
 			});
 			document.addEventListener('jentis.consent.engine.no-consent-given', function (e)
 			{
@@ -21,6 +21,8 @@
 			document.addEventListener('jentis.consent.engine.show-bar', function (e)
 			{
 				console.log("Show Bar now: %o",e.detail);
+				//Show cookie bar to user when consent engine wants it
+				Cookiebot.show();
 			});
 						
 			document.addEventListener('jentis.consent.engine.vendor-change', function (e)
@@ -47,53 +49,52 @@
 		<script>
 		
 		
-		function acceptAll()
-		{
-			jentis.consent.engine.AcceptAll();
-		}
+		// function acceptAll()
+		// {
+		// 	jentis.consent.engine.AcceptAll();
+		// }
 		
-		function acceptGa()
-		{		
-			var sConsentId = jentis.consent.engine.setNewVendorConsents({
-			  "ga"  : true, 
-			  "fb"  : true
-			});		
-		}
+		// function acceptGa()
+		// {		
+		// 	var sConsentId = jentis.consent.engine.setNewVendorConsents({
+		// 	  "ga"  : true, 
+		// 	  "fb"  : true
+		// 	});		
+		// }
 		
-		function denyAll()
-		{		
-			var sConsentId = jentis.consent.engine.DenyAll();
-		}
+		// function denyAll()
+		// {		
+		// 	var sConsentId = jentis.consent.engine.DenyAll();
+		// }
 		
-		function MigrateOldConsent()
-		{
-			var aData = {
-				consentid: "TESTTESTTEST",
-				lastupdate: 100,
-				vendors: {"ga":true,"fb":false,"adw":false}				
-			};			
-			var sJson = JSON.stringify(aData);
+		// function MigrateOldConsent()
+		// {
+		// 	var aData = {
+		// 		consentid: "TESTTESTTEST",
+		// 		lastupdate: 100,
+		// 		vendors: {"ga":true,"fb":false,"adw":false}				
+		// 	};			
+		// 	var sJson = JSON.stringify(aData);
 
-			//Now write it to the local storage
-			localStorage.setItem("jentis.consent.data", sJson);		
-		}
+		// 	//Now write it to the local storage
+		// 	localStorage.setItem("jentis.consent.data", sJson);		
+		// }
 		
-		function MigrateInTimeConsent()
-		{
-			var aData = {
-				consentid: "TESTTESTTEST",
-				lastupdate: Date.now()-1000,
-				vendors: {"ga":true,"fb":false,"adw":false}				
-			};			
-			var sJson = JSON.stringify(aData);
+		// function MigrateInTimeConsent()
+		// {
+		// 	var aData = {
+		// 		consentid: "TESTTESTTEST",
+		// 		lastupdate: Date.now()-1000,
+		// 		vendors: {"ga":true,"fb":false,"adw":false}				
+		// 	};			
+		// 	var sJson = JSON.stringify(aData);
 
-			//Now write it to the local storage
-			localStorage.setItem("jentis.consent.data", sJson);		
-		}
-		
-		
+		// 	//Now write it to the local storage
+		// 	localStorage.setItem("jentis.consent.data", sJson);		
+		// }
 		
 		</script>
+
 		<style>
 			button
 			{
@@ -104,7 +105,11 @@
 		</style>
 	</head>
 	<body>
-		<button onClick="acceptAll();">
+		<h1>Cookiebot Bridge To Consent Engine</h1>
+		<button onClick=" Cookiebot.renew();">
+			Renew or change your cookie settings
+		</button>
+		<!-- <button onClick="acceptAll();">
 			Accept All
 		</button>
 		<button onClick="acceptGa();">
@@ -118,7 +123,49 @@
 		</button>
 		<button onClick="MigrateInTimeConsent();">
 			Do old consent IN TIME
-		</button>
+		</button> -->
+		
 
+
+
+
+
+		<script type="text/javascript">
+		const vendorData = jentis.consent.engine.getVendorFullData("en", true);
+		const consent = Cookiebot.consent;
+
+		//Fired when some or all cookies are accepted
+		window.addEventListener('CookiebotOnAccept', function (e) {
+		let consentedCookies = {};
+
+		//Check if all cookies were accepted
+		if (consent.marketing && consent.statistics && consent.preferences)
+			{
+				jentis.consent.engine.AcceptAll();
+			}
+		//Else check which cookies were accepted
+		else
+			{
+				for(key in vendorData){
+					if (vendorData[key].purpose.id == "mark")
+						consentedCookies[key] = consent.marketing;
+					else if (vendorData[key].purpose.id == "stat")
+						consentedCookies[key] = consent.statistics;
+					//Not necessary but for possible future usecases
+					else if (vendorData[key].purpose.id == "pref")
+						consentedCookies[key] = consent.preferences;
+				}
+
+				jentis.consent.engine.setNewVendorConsents(consentedCookies);	
+			}
+		}, false);
+
+		//Fired when only necessary cookies are accepted
+		window.addEventListener('CookiebotOnDecline', function (e) {
+			jentis.consent.engine.DenyAll();
+			console.log("ALL DENIED");
+		}, false);
+
+		</script>
 	</body>
 </html>
